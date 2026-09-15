@@ -90,87 +90,6 @@
 <script src="js/webvr.js" type="text/javascript"></script>
 <script src="js/phonevr.js" type="text/javascript"></script>
 <script src="js/elevr-player.js" type="text/javascript"></script>
-<style>
-/* ========== 新增：毛玻璃科幻样式，不改动任何元素尺寸/位置 ========== */
-#video-controls {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(12, 20, 40, 0.65);
-  border: 1px solid rgba(0, 220, 255, 0.35);
-  box-shadow: 0 0 16px rgba(0, 220, 255, 0.18), inset 0 0 10px rgba(0, 220, 255, 0.06);
-  border-radius: 10px;
-}
-
-#video-controls .icon {
-  color: #c9f7ff;
-  text-shadow: 0 0 6px rgba(0,220,255,0.6);
-  transition: 0.2s;
-}
-#video-controls .icon:hover {
-  color:#fff;
-  text-shadow:0 0 12px rgba(0,220,255,0.9);
-}
-
-#seek-bar {
-  accent-color:#00dcff;
-}
-#seek-bar::-webkit-slider-thumb{
-  box-shadow:0 0 8px #00dcff;
-}
-
-#projection-select, #video-select{
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  background:rgba(10,18,36,0.72);
-  color:#c9f7ff;
-  border:1px solid rgba(0,220,255,0.35);
-}
-#projection-select option, #video-select option{
-  background:#0c1428;
-}
-
-#video-url-input{
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  background:rgba(10,18,36,0.72);
-  color:#fff;
-  border:1px solid rgba(0,220,255,0.35);
-  outline:none;
-}
-#video-url-input:focus{
-  border-color:#00dcff;
-  box-shadow:0 0 8px rgba(0,220,255,0.5);
-}
-#video-url-input::placeholder{
-  color:#7888a8;
-}
-
-#load-url-btn{
-  background:#00dcff;
-  color:#06121c;
-  border:none;
-  box-shadow:0 0 8px rgba(0,220,255,0.6);
-}
-#load-url-btn:hover{
-  box-shadow:0 0 14px rgba(0,220,255,0.9);
-}
-
-#tip{
-  text-shadow:0 0 6px rgba(0,220,255,0.7);
-}
-
-.title {
-  color:#80f0ff;
-  text-shadow:0 0 10px rgba(0,220,255,0.7);
-}
-.message{
-  color:#b0c8e8;
-}
-.large-play{
-  color:#80f0ff;
-  text-shadow:0 0 16px rgba(0,220,255,0.8);
-}
-</style>
 </head>
 <body>
   <div id="video-container">
@@ -224,23 +143,27 @@
         </div>
         <script>runEleVRPlayer();</script>
   </div>
+
 <script>
 const videoSel = document.getElementById('video-select');
 const video = document.getElementById('video');
 const urlInput = document.getElementById('video-url-input');
 const loadBtn = document.getElementById('load-url-btn');
 const tipDom = document.getElementById('tip');
+
 // ========== 原有下拉框逻辑保持不变（本地视频） ==========
 videoSel.addEventListener('change', function(){
   const fileName = this.value;
   video.src = fileName;
   video.load();
 });
+
 // ========== URL加载函数（外部mp4直链，不依赖下拉option） ==========
 function loadVideoSrc(srcUrl){
   tipDom.innerText = "加载中";
   video.src = srcUrl;
   video.load();
+
   video.oncanplay = function(){
     tipDom.innerText = "就绪，点播放";
   }
@@ -248,6 +171,7 @@ function loadVideoSrc(srcUrl){
     tipDom.innerText = "失败！CORS/链接错误";
   }
 }
+
 // 按钮点击加载
 loadBtn.addEventListener('click', function(){
   const url = urlInput.value.trim();
@@ -257,6 +181,7 @@ loadBtn.addEventListener('click', function(){
   }
   loadVideoSrc(url);
 });
+
 // 回车加载
 urlInput.addEventListener('keydown',function(e){
   if(e.key === 'Enter'){
@@ -264,5 +189,6 @@ urlInput.addEventListener('keydown',function(e){
   }
 })
 </script>
+
 </body>
 </html>
