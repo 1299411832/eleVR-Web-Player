@@ -163,5 +163,48 @@
 
         <script>runEleVRPlayer();</script>
       </div>
+<!-- 新增：URL粘贴输入框 + 加载按钮 -->
+<div style="margin:10px 0;">
+  <input type="url" id="video-url-input" placeholder="粘贴视频URL在这里..." style="width:600px;padding:6px;">
+  <button id="load-url-btn">加载URL视频</button>
+</div>
 
+<style>
+.rfloat {
+  float:right;
+}
+</style>
+
+<script>
+const videoSel = document.getElementById('video-select');
+const video = document.getElementById('myvideo');
+const urlInput = document.getElementById('video-url-input');
+const loadBtn = document.getElementById('load-url-btn');
+
+// 1. 原有下拉框切换视频
+videoSel.addEventListener('change', function(){
+  const fileName = this.value;
+  video.src = fileName;
+  video.load();
+  // video.play(); // 如果你不想自动播放，注释掉这一行
+})
+
+// 2. 点击按钮，加载粘贴的URL
+loadBtn.addEventListener('click', function(){
+  const url = urlInput.value.trim();
+  if(!url) return alert('请粘贴视频链接');
+  video.src = url;
+  video.load();
+  // video.play();
+})
+
+// 可选：输入框按回车直接加载
+urlInput.addEventListener('keydown',function(e){
+  if(e.key === 'Enter'){
+    loadBtn.click();
+  }
+})
+</script>
+
+  
     </body></html>
