@@ -8,7 +8,7 @@
 * of the License, or (at your option) any later version.
 *
 * This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* but WITHOUT ANY WARRANTY; without even the implied warranty.
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 * GNU General Public License for more details.
 *
@@ -27,6 +27,7 @@
   <meta name="apple-touch-fullscreen" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" sizes="196x196" href="https://ce.auemt.com/kumiti/logo.jpg">
+
   <!-- Fragment shader program -->
   <script id="shader-fs" type="x-shader/x-fragment">
   varying mediump vec3 vDirection;
@@ -35,33 +36,15 @@
   uniform sampler2D uSampler;
   #define PI 3.1415926535897932384626433832795
   mediump vec4 directionToColor(mediump vec3 direction, mediump float eye, mediump float projection) {
-    /*
-    * Input: a direction.  +x = right, +y = up, +z = backward.
-    *        an eye. left = 0, right = 1.
-    *        a projection. see ProjectionEnum in JS file for enum
-    * Output: a color from the video
-    *
-    * Bug alert: the control flow here may screw up texture filtering.
-    */
     mediump float theta = atan(direction.x, -1.0 * direction.z);
     mediump float phi = atan(direction.y, length(direction.xz));
-    /*
-    * The Nexus 7 and the Moto X (and possibly many others) have
-    * a buggy atan2 implementation that screws up when the numerator
-    * (the first argument) is too close to zero.  (The 1e-4 is carefully
-    * chosen: 1e-5 doesn't fix the problem.
-    */
     if (abs(direction.x) < 1e-4 * abs(direction.z))
     theta = 0.5*PI * (1.0 - sign(-1.0 * direction.z));
     if (abs(direction.y) < 1e-4 * length(direction.xz))
     phi = 0.0;
-    // Uncomment to debug the transformations.
-    // return vec4(theta / (2. * PI) + 0.5, phi / (2. * PI) + 0.5, 0., 0.);
     if (projection == 0.) {
-      // Projection == 0: equirectangular projection
       return texture2D(uSampler, vec2(mod(theta / (2.0*PI), 1.0), phi / PI + 0.5));
     } else {
-      // Projection == 1: equirectangular top/bottom 3D projection
       eye = 1. - eye;
       return texture2D(uSampler, vec2(mod(theta / (2.0*PI), 1.0), ((phi / PI + 0.5) + eye)/ 2.));
     }
@@ -69,9 +52,10 @@
   void main(void) {
     gl_FragColor = directionToColor(vDirection, eye, projection);
   }
-</script>
-<!-- Vertex shader program -->
-<script id="shader-vs" type="x-shader/x-vertex">
+  </script>
+
+  <!-- Vertex shader program -->
+  <script id="shader-vs" type="x-shader/x-vertex">
   attribute mediump vec2 aVertexPosition;
   uniform mediump mat4 proj_inv;
   varying mediump vec3 vDirection;
@@ -80,26 +64,524 @@
     mediump vec4 projective_direction = proj_inv * gl_Position;
     vDirection = projective_direction.xyz / projective_direction.w;
   }
-</script>
-<link rel="stylesheet" href="css/font-awesome.css">
-<link rel="stylesheet" href="css/elevr-player.css">
-<script src="lib/gl-matrix.js" type="text/javascript"></script>
-<script src="lib/util.js" type="text/javascript"></script>
-<script src="js/controls.js" type="text/javascript"></script>
-<script src="js/player-webgl.js" type="text/javascript"></script>
-<script src="js/webvr.js" type="text/javascript"></script>
-<script src="js/phonevr.js" type="text/javascript"></script>
-<script src="js/elevr-player.js" type="text/javascript"></script>
+  </script>
+
+  <link rel="stylesheet" href="css/font-awesome.css">
+  <link rel="stylesheet" href="css/elevr-player.css">
+
+  <script src="lib/gl-matrix.js" type="text/javascript"></script>
+  <script src="lib/util.js" type="text/javascript"></script>
+  <script src="js/controls.js" type="text/javascript"></script>
+  <script src="js/player-webgl.js" type="text/javascript"></script>
+  <script src="js/webvr.js" type="text/javascript"></script>
+  <script src="js/phonevr.js" type="text/javascript"></script>
+  <script src="js/elevr-player.js" type="text/javascript"></script>
+
+  <style>
+    /* ========== 全局赛博朋克主题覆盖 ========== */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #0b1220 0%, #05070d 55%, #02030a 100%);
+      color: #d6e4ff;
+      font-family: "Orbitron", "Rajdhani", "Microsoft YaHei", "PingFang SC", sans-serif;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* 背景网格与扫描线 */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0, 229, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.07) 1px, transparent 1px);
+      background-size: 44px 44px;
+      z-index: 1;
+      mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.02) 0px,
+        rgba(255, 255, 255, 0.02) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      z-index: 2;
+      mix-blend-mode: overlay;
+    }
+
+    /* 顶部品牌条 */
+    #hud-header {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      z-index: 30;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    #hud-header .brand {
+      pointer-events: auto;
+      padding: 10px 14px;
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(14, 22, 48, 0.82), rgba(10, 14, 30, 0.55));
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 0 18px rgba(0, 229, 255, 0.25),
+        inset 0 0 14px rgba(0, 229, 255, 0.08);
+      clip-path: polygon(
+        12px 0,
+        calc(100% - 12px) 0,
+        100% 12px,
+        100% calc(100% - 12px),
+        calc(100% - 12px) 100%,
+        12px 100%,
+        0 calc(100% - 12px),
+        0 12px
+      );
+    }
+
+    #hud-header .brand .title {
+      font-size: 14px;
+      letter-spacing: 4px;
+      color: #7dfcff;
+      text-shadow: 0 0 10px rgba(0, 229, 255, 0.9);
+    }
+
+    #hud-header .brand .subtitle {
+      font-size: 10px;
+      color: #7c8db5;
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+
+    #hud-header .status-panel {
+      pointer-events: auto;
+      display: flex;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      border-radius: 10px;
+      background: rgba(10, 14, 30, 0.55);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.18);
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: #9fb3d9;
+      letter-spacing: 2px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22ff9f;
+      box-shadow: 0 0 10px #22ff9f;
+      animation: pulseDot 1.6s ease-in-out infinite;
+    }
+
+    .status-dot.warn {
+      background: #ffd84d;
+      box-shadow: 0 0 10px #ffd84d;
+    }
+
+    .status-dot.error {
+      background: #ff4d6d;
+      box-shadow: 0 0 10px #ff4d6d;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.55; }
+    }
+
+    /* 视频容器保持全屏，但层级低于HUD */
+    #video-container {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+    }
+
+    #glcanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    /* 播放按钮全息风格 */
+    .large-play {
+      color: rgba(125, 252, 255, 0.95);
+      text-shadow:
+        0 0 10px rgba(0, 229, 255, 0.9),
+        0 0 22px rgba(0, 229, 255, 0.6);
+      transition: transform 0.25s ease, text-shadow 0.25s ease;
+    }
+
+    .large-play:hover {
+      transform: scale(1.08);
+      text-shadow:
+        0 0 14px rgba(0, 229, 255, 1),
+        0 0 28px rgba(0, 229, 255, 0.75);
+    }
+
+    /* 底部全息控制栏 */
+    #video-controls {
+      position: fixed !important;
+      left: 50% !important;
+      bottom: 24px !important;
+      transform: translateX(-50%) !important;
+      width: min(1180px, calc(100vw - 40px)) !important;
+      z-index: 40 !important;
+      display: flex !important;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(14, 22, 48, 0.86), rgba(10, 14, 30, 0.68));
+      backdrop-filter: blur(14px);
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.55),
+        0 0 24px rgba(0, 229, 255, 0.22),
+        inset 0 0 18px rgba(0, 229, 255, 0.08);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    #video-controls.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 切角装饰 */
+    #video-controls::before,
+    #video-controls::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #7dfcff;
+    }
+
+    #video-controls::before {
+      top: -1px;
+      left: 14px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    #video-controls::after {
+      bottom: -1px;
+      right: 14px;
+      border-left: none;
+      border-top: none;
+    }
+
+    /* 控制图标按钮 */
+    #video-controls .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      color: #cfe6ff;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.12), rgba(0, 229, 255, 0.04));
+      border: 1px solid rgba(0, 229, 255, 0.32);
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.7);
+      transition: all 0.22s ease;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    #video-controls .icon:hover {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.28), rgba(0, 229, 255, 0.1));
+      border-color: #7dfcff;
+      box-shadow:
+        0 0 14px rgba(0, 229, 255, 0.55),
+        inset 0 0 10px rgba(0, 229, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    /* 进度条 */
+    #seek-bar {
+      flex: 1 1 260px;
+      min-width: 140px;
+      height: 6px;
+      appearance: none;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(0, 229, 255, 0.55), rgba(125, 252, 255, 0.15));
+      outline: none;
+      box-shadow:
+        0 0 10px rgba(0, 229, 255, 0.35),
+        inset 0 0 4px rgba(0, 0, 0, 0.6);
+    }
+
+    #seek-bar::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #7dfcff;
+      box-shadow:
+        0 0 12px #7dfcff,
+        0 0 22px rgba(0, 229, 255, 0.7);
+      cursor: pointer;
+      transition: transform 0.18s ease;
+    }
+
+    #seek-bar::-webkit-slider-thumb:hover {
+      transform: scale(1.18);
+    }
+
+    /* 选择器 */
+    #projection-select,
+    #video-select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding: 8px 32px 8px 12px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: #e8f6ff;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.14), rgba(0, 229, 255, 0.04));
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 10px;
+      cursor: pointer;
+      outline: none;
+      position: relative;
+      box-shadow:
+        0 0 10px rgba(0, 229, 255, 0.22),
+        inset 0 0 8px rgba(0, 229, 255, 0.08);
+    }
+
+    #projection-select:hover,
+    #video-select:hover {
+      border-color: #7dfcff;
+      box-shadow:
+        0 0 14px rgba(0, 229, 255, 0.45),
+        inset 0 0 10px rgba(0, 229, 255, 0.12);
+    }
+
+    /* URL输入区 */
+    .url-hud {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid rgba(0, 229, 255, 0.32);
+      border-radius: 12px;
+      background: rgba(10, 14, 30, 0.55);
+      box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.08);
+    }
+
+    .url-hud label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #7dfcff;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.7);
+    }
+
+    #video-url-input {
+      width: 210px;
+      height: 32px;
+      padding: 0 10px;
+      font-size: 12px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(0, 229, 255, 0.28);
+      border-radius: 8px;
+      outline: none;
+      letter-spacing: 1px;
+      transition: border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    #video-url-input:focus {
+      border-color: #7dfcff;
+      box-shadow:
+        0 0 12px rgba(0, 229, 255, 0.55),
+        inset 0 0 8px rgba(0, 229, 255, 0.12);
+    }
+
+    #video-url-input::placeholder {
+      color: #5c7199;
+      letter-spacing: 1px;
+    }
+
+    #load-url-btn {
+      height: 32px;
+      padding: 0 14px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #041018;
+      background: linear-gradient(135deg, #7dfcff, #3fb8ff);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow:
+        0 0 14px rgba(0, 229, 255, 0.7),
+        inset 0 0 8px rgba(255, 255, 255, 0.35);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    #load-url-btn:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 18px rgba(0, 229, 255, 0.9),
+        inset 0 0 10px rgba(255, 255, 255, 0.45);
+    }
+
+    #tip {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #7dfcff;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.7);
+      min-width: 90px;
+    }
+
+    #tip.error {
+      color: #ff7a90;
+      text-shadow: 0 0 8px rgba(255, 77, 109, 0.8);
+    }
+
+    #tip.success {
+      color: #9cffd1;
+      text-shadow: 0 0 8px rgba(34, 255, 159, 0.8);
+    }
+
+    /* 隐藏类 */
+    .hidden {
+      display: none !important;
+    }
+
+    .rfloat {
+      float: none;
+    }
+
+    /* 加载全息扫描线 */
+    #left-load, #right-load {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 42%;
+      padding: 24px;
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(14, 22, 48, 0.86), rgba(10, 14, 30, 0.55));
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 0 24px rgba(0, 229, 255, 0.25),
+        inset 0 0 18px rgba(0, 229, 255, 0.08);
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    #left-load {
+      left: 4%;
+    }
+
+    #right-load {
+      right: 4%;
+    }
+
+    #left-load .title,
+    #right-load .title {
+      font-size: 16px;
+      letter-spacing: 4px;
+      color: #7dfcff;
+      text-shadow: 0 0 10px rgba(0, 229, 255, 0.9);
+    }
+
+    #left-load .message,
+    #right-load .message {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #9fb3d9;
+      letter-spacing: 2px;
+    }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      #video-controls {
+        width: calc(100vw - 28px);
+        padding: 12px;
+        gap: 8px;
+      }
+
+      #video-url-input {
+        width: 140px;
+      }
+
+      #hud-header .brand .title {
+        font-size: 12px;
+        letter-spacing: 3px;
+      }
+
+      .status-item {
+        font-size: 10px;
+      }
+    }
+  </style>
 </head>
 <body>
+
+  <!-- 顶部HUD -->
+  <div id="hud-header">
+    <div class="brand">
+      <div class="title">迷体元宇 · PLAYER</div>
+      <div class="subtitle">360° VR VIDEO SYSTEM</div>
+    </div>
+
+    <div class="status-panel">
+      <div class="status-item">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">SYSTEM READY</span>
+      </div>
+      <div class="status-item">
+        <span class="status-dot warn"></span>
+        <span>WEBGL</span>
+      </div>
+      <div class="status-item">
+        <span class="status-dot"></span>
+        <span id="modeText">星球模式</span>
+      </div>
+    </div>
+  </div>
+
   <div id="video-container">
     <!-- Loading Message -->
     <div id="left-load" class="left">
-      <div id="title-l" class="title">Loading Video...</div>
+      <div id="title-l" class="title">LOADING VIDEO...</div>
       <div id="message-l" class="message hidden">Try WASD + Q/E</div>
     </div>
     <div id="right-load" class="right">
-      <div id="title-r" class="title">Loading Video...</div>
+      <div id="title-r" class="title">LOADING VIDEO...</div>
       <div id="message-r" class="message hidden">Try WASD + Q/E</div>
     </div>
     <div id="left-play" class="left hidden">
@@ -108,86 +590,161 @@
     <div id="right-play" class="right hidden">
       <a id="play-r" class="large-play fa fa-play fa-5x"></a>
     </div>
+
     <canvas id="glcanvas">
       Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
     </canvas>
+
     <video class="hidden" preload="auto" id="video" loop="true" webkit-playsinline crossOrigin="anonymous">
-      <source src="https://cdn.pixabay.com/video/2023/09/24/182082-867762198_large.mp4" type="video/mp4">
+      <source src="therelaxatron2.mp4" type="video/mp4">
       <source src="therelaxatron.webm" type="video/webm">
     </video>
-        <!-- Video Controls -->
-        <div id="video-controls" class="hidden">
-          <a id="play-pause" class="fa fa-play icon" title="Play"></a>
-          <input type="range" id="seek-bar" value="0">
-          <a id="loop" class="fa fa-chain-broken icon" title="Stop Looping"></a>
-          <a id="mute" class="fa fa-volume-up icon" title="Mute"></a>
-          <a id="recenter" class="fa fa-dot-circle-o icon" title="Recenter"></a>
-          <a id="select-local-file" class="fa fa-folder-open icon rfloat" title="Select File"></a>
-          <!-- 投影下拉 -->
-          <select id="projection-select" class="rfloat">
-            <option value=0>星球模式</option>
-            <option value=1>星球MAX 3D</option>
-          </select>
-          <!-- 视频下拉（本地预设视频） -->
-          <select id="video-select" class="rfloat">
-            <option value="https://cdn.pixabay.com/video/2021/09/27/89894-616430996_large.mp4">衍镜模式 (mp4)</option>
-            <option value="0therelaxatron.webm">衍镜模式 (webm)</option>
-            <option value="https://cdn.pixabay.com/video/2021/09/27/89894-616430996_large.mp4">迷体模式 (mp4)</option>
-            <option value="1Vidcon.webm">迷体模式 (webm)</option>
-          </select>
-          <!-- URL输入框，小尺寸适配手机 -->
-          <input type="text" id="video-url-input" placeholder="URL" style="width:130px;padding:2px;font-size:12px;margin-right:6px;" class="rfloat">
-          <button id="load-url-btn" style="padding:2px 4px;font-size:12px;margin-right:6px;" class="rfloat">加载</button>
-          <span id="tip" style="color:#fff;font-size:11px;margin-right:8px;" class="rfloat"></span>
-          <a id="full-screen" class="fa fa-expand icon rfloat" title="Full Screen"></a>
-        </div>
-        <script>runEleVRPlayer();</script>
+
+    <!-- Video Controls -->
+    <div id="video-controls">
+      <a id="play-pause" class="fa fa-play icon" title="Play"></a>
+      <input type="range" id="seek-bar" value="0">
+      <a id="loop" class="fa fa-chain-broken icon" title="Stop Looping"></a>
+      <a id="mute" class="fa fa-volume-up icon" title="Mute"></a>
+      <a id="recenter" class="fa fa-dot-circle-o icon" title="Recenter"></a>
+      <a id="select-local-file" class="fa fa-folder-open icon" title="Select File"></a>
+
+      <select id="projection-select">
+        <option value="0">星球模式</option>
+        <option value="1">星球MAX 3D</option>
+      </select>
+
+      <select id="video-select">
+        <option value="0therelaxatron2.mp4">衍镜模式 (mp4)</option>
+        <option value="0therelaxatron.webm">衍镜模式 (webm)</option>
+        <option value="1Vidcon5.mp4">迷体模式 (mp4)</option>
+        <option value="1Vidcon.webm">迷体模式 (webm)</option>
+      </select>
+
+      <div class="url-hud">
+        <label for="video-url-input">URL</label>
+        <input type="text" id="video-url-input" placeholder="输入全景视频直链">
+        <button id="load-url-btn">加载</button>
+        <span id="tip">待机</span>
+      </div>
+
+      <a id="full-screen" class="fa fa-expand icon" title="Full Screen"></a>
+    </div>
+
+    <script>runEleVRPlayer();</script>
   </div>
 
 <script>
-const videoSel = document.getElementById('video-select');
-const video = document.getElementById('video');
-const urlInput = document.getElementById('video-url-input');
-const loadBtn = document.getElementById('load-url-btn');
-const tipDom = document.getElementById('tip');
+(function () {
+  const videoSel = document.getElementById('video-select');
+  const video = document.getElementById('video');
+  const urlInput = document.getElementById('video-url-input');
+  const loadBtn = document.getElementById('load-url-btn');
+  const tipDom = document.getElementById('tip');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const modeText = document.getElementById('modeText');
+  const projectionSelect = document.getElementById('projection-select');
+  const controls = document.getElementById('video-controls');
 
-// ========== 原有下拉框逻辑保持不变（本地视频） ==========
-videoSel.addEventListener('change', function(){
-  const fileName = this.value;
-  video.src = fileName;
-  video.load();
-});
+  let hideTimer = null;
 
-// ========== URL加载函数（外部mp4直链，不依赖下拉option） ==========
-function loadVideoSrc(srcUrl){
-  tipDom.innerText = "加载中";
-  video.src = srcUrl;
-  video.load();
-
-  video.oncanplay = function(){
-    tipDom.innerText = "就绪，点播放";
+  function showControls() {
+    controls.classList.add('visible');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () {
+      controls.classList.remove('visible');
+    }, 2800);
   }
-  video.onerror = function(){
-    tipDom.innerText = "失败！CORS/链接错误";
-  }
-}
 
-// 按钮点击加载
-loadBtn.addEventListener('click', function(){
-  const url = urlInput.value.trim();
-  if(!url){
-    tipDom.innerText = "空链接";
-    return;
-  }
-  loadVideoSrc(url);
-});
+  document.addEventListener('mousemove', showControls);
+  document.addEventListener('touchstart', showControls);
+  document.addEventListener('click', showControls);
 
-// 回车加载
-urlInput.addEventListener('keydown',function(e){
-  if(e.key === 'Enter'){
-    loadBtn.click();
+  function setStatus(state, text) {
+    statusDot.classList.remove('warn', 'error');
+    if (state === 'ok') statusDot.classList.add('ok');
+    if (state === 'warn') statusDot.classList.add('warn');
+    if (state === 'error') statusDot.classList.add('error');
+    statusText.textContent = text;
   }
-})
+
+  function setTip(text, type) {
+    tipDom.textContent = text;
+    tipDom.classList.remove('error', 'success');
+    if (type === 'error') tipDom.classList.add('error');
+    if (type === 'success') tipDom.classList.add('success');
+  }
+
+  // 原有下拉切换
+  videoSel.addEventListener('change', function () {
+    const fileName = this.value;
+    video.src = fileName;
+    video.load();
+    setTip('已切换视频', 'success');
+    setStatus('ok', 'VIDEO LOADED');
+  });
+
+  // 投影模式同步显示
+  projectionSelect.addEventListener('change', function () {
+    modeText.textContent = this.options[this.selectedIndex].text;
+  });
+
+  // URL加载
+  function loadVideoSrc(srcUrl) {
+    setTip('加载中...', 'warn');
+    setStatus('warn', 'BUFFERING');
+    video.src = srcUrl;
+    video.load();
+
+    video.oncanplay = function () {
+      setTip('就绪，点播放', 'success');
+      setStatus('ok', 'PLAYING');
+      video.play().catch(function () {
+        setTip('请手动播放', 'warn');
+        setStatus('warn', 'MANUAL PLAY');
+      });
+    };
+
+    video.onerror = function () {
+      setTip('加载失败', 'error');
+      setStatus('error', 'CORS ERROR');
+    };
+  }
+
+  loadBtn.addEventListener('click', function () {
+    const url = urlInput.value.trim();
+    if (!url) {
+      setTip('请输入链接', 'error');
+      return;
+    }
+    loadVideoSrc(url);
+  });
+
+  urlInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      loadBtn.click();
+    }
+  });
+
+  // 播放状态联动
+  video.addEventListener('play', function () {
+    setStatus('ok', 'PLAYING');
+    setTip('播放中', 'success');
+  });
+
+  video.addEventListener('pause', function () {
+    setStatus('warn', 'PAUSED');
+  });
+
+  video.addEventListener('waiting', function () {
+    setStatus('warn', 'BUFFERING');
+  });
+
+  video.addEventListener('playing', function () {
+    setStatus('ok', 'PLAYING');
+  });
+})();
 </script>
 
 </body>
