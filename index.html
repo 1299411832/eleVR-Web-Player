@@ -123,70 +123,53 @@
           <a id="mute" class="fa fa-volume-up icon" title="Mute"></a>
           <a id="recenter" class="fa fa-dot-circle-o icon" title="Recenter"></a>
           <a id="select-local-file" class="fa fa-folder-open icon rfloat" title="Select File"></a>
+          <!-- 投影下拉 -->
           <select id="projection-select" class="rfloat">
             <option value=0>星球模式</option>
             <option value=1>星球MAX 3D</option>
           </select>
+          <!-- 视频下拉 -->
           <select id="video-select" class="rfloat">
             <option value="0therelaxatron2.mp4">衍镜模式 (mp4)</option>
             <option value="0therelaxatron.webm">衍镜模式 (webm)</option>
             <option value="1Vidcon5.mp4">迷体模式 (mp4)</option>
             <option value="1Vidcon.webm">迷体模式 (webm)</option>
           </select>
+          <!-- ===== 缩小尺寸，适配手机窄屏幕 ===== -->
+          <input type="text" id="video-url-input" placeholder="URL" style="width:130px;padding:2px;font-size:12px;margin-right:6px;" class="rfloat">
+          <button id="load-url-btn" style="padding:2px 4px;font-size:12px;margin-right:6px;" class="rfloat">加载</button>
+          <span id="tip" style="color:#fff;font-size:11px;margin-right:8px;" class="rfloat"></span>
           <a id="full-screen" class="fa fa-expand icon rfloat" title="Full Screen"></a>
         </div>
         <script>runEleVRPlayer();</script>
   </div>
 
-<!-- ========== 新增URL粘贴输入区域 ========== -->
-<div style="margin:12px 10px; z-index:9999; position:relative;">
-  <input type="url" id="video-url-input" placeholder="粘贴全景视频直链 mp4/webm" style="width:620px;padding:7px;">
-  <button id="load-url-btn" style="padding:7px 14px;margin-left:6px;">加载URL视频</button>
-  <div id="tip" style="color:#fff;margin-top:4px;"></div>
-</div>
-
 <script>
 const videoSel = document.getElementById('video-select');
-const video = document.getElementById('video');
 const urlInput = document.getElementById('video-url-input');
 const loadBtn = document.getElementById('load-url-btn');
 const tipDom = document.getElementById('tip');
 
-// 统一加载视频函数
+// 加载视频函数：修改下拉框值，触发原生change事件
 function loadVideoSrc(srcUrl){
-  tipDom.innerText = "正在加载视频...";
-  video.src = srcUrl;
-  video.load();
-
-  video.oncanplay = function(){
-    tipDom.innerText = "加载成功，请点播放";
-    video.play().catch(e=>{
-      tipDom.innerText = "加载成功，浏览器阻止自动播放，请手动播放";
-    });
-  }
-
-  video.onerror = function(){
-    tipDom.innerText = "加载失败！检查链接或者跨域CORS";
-  }
+  tipDom.innerText = "加载中";
+  videoSel.value = srcUrl;
+  const evt = new Event('change');
+  videoSel.dispatchEvent(evt);
+  tipDom.innerText = "OK";
 }
 
-// 原有下拉框切换
-videoSel.addEventListener('change', function(){
-  const fileName = this.value;
-  loadVideoSrc(fileName);
-});
-
-// 点击按钮加载URL
+// 按钮点击加载
 loadBtn.addEventListener('click', function(){
   const url = urlInput.value.trim();
   if(!url){
-    tipDom.innerText = "请粘贴全景视频链接";
+    tipDom.innerText = "空链接";
     return;
   }
   loadVideoSrc(url);
 });
 
-// 回车直接加载
+// 回车加载
 urlInput.addEventListener('keydown',function(e){
   if(e.key === 'Enter'){
     loadBtn.click();
