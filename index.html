@@ -128,14 +128,14 @@
             <option value=0>星球模式</option>
             <option value=1>星球MAX 3D</option>
           </select>
-          <!-- 视频下拉 -->
+          <!-- 视频下拉（本地预设视频） -->
           <select id="video-select" class="rfloat">
             <option value="0therelaxatron2.mp4">衍镜模式 (mp4)</option>
             <option value="0therelaxatron.webm">衍镜模式 (webm)</option>
             <option value="1Vidcon5.mp4">迷体模式 (mp4)</option>
             <option value="1Vidcon.webm">迷体模式 (webm)</option>
           </select>
-          <!-- ===== 缩小尺寸，适配手机窄屏幕 ===== -->
+          <!-- URL输入框，小尺寸适配手机 -->
           <input type="text" id="video-url-input" placeholder="URL" style="width:130px;padding:2px;font-size:12px;margin-right:6px;" class="rfloat">
           <button id="load-url-btn" style="padding:2px 4px;font-size:12px;margin-right:6px;" class="rfloat">加载</button>
           <span id="tip" style="color:#fff;font-size:11px;margin-right:8px;" class="rfloat"></span>
@@ -146,17 +146,30 @@
 
 <script>
 const videoSel = document.getElementById('video-select');
+const video = document.getElementById('video');
 const urlInput = document.getElementById('video-url-input');
 const loadBtn = document.getElementById('load-url-btn');
 const tipDom = document.getElementById('tip');
 
-// 加载视频函数：修改下拉框值，触发原生change事件
+// ========== 原有下拉框逻辑保持不变（本地视频） ==========
+videoSel.addEventListener('change', function(){
+  const fileName = this.value;
+  video.src = fileName;
+  video.load();
+});
+
+// ========== URL加载函数（外部mp4直链，不依赖下拉option） ==========
 function loadVideoSrc(srcUrl){
   tipDom.innerText = "加载中";
-  videoSel.value = srcUrl;
-  const evt = new Event('change');
-  videoSel.dispatchEvent(evt);
-  tipDom.innerText = "OK";
+  video.src = srcUrl;
+  video.load();
+
+  video.oncanplay = function(){
+    tipDom.innerText = "就绪，点播放";
+  }
+  video.onerror = function(){
+    tipDom.innerText = "失败！CORS/链接错误";
+  }
 }
 
 // 按钮点击加载
