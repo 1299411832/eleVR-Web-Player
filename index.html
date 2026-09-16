@@ -72,7 +72,6 @@
 <script src="js/webvr.js" type="text/javascript"></script>
 <script src="js/phonevr.js" type="text/javascript"></script>
 <script src="js/elevr-player.js" type="text/javascript"></script>
-
 <style>
 /* ========== 全局基础样式｜迷体元宇 科幻风格 ========== */
 *{
@@ -101,7 +100,6 @@ html,body{
   background-size:100% 24px;
   opacity:0.35;
 }
-
 /* ========== 控制面板｜自动隐藏核心样式 ========== */
 #video-controls {
   position:absolute;
@@ -109,38 +107,40 @@ html,body{
   left:50%;
   transform: translateX(-50%);
   z-index:10;
-
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   background: rgba(6, 14, 28, 0.62);
   border: 1px solid rgba(0, 200, 255, 0.35);
   border-radius: 14px;
   box-shadow: 0 0 22px rgba(0, 200, 255, 0.14), inset 0 0 14px rgba(0, 200, 255, 0.05);
-
   /* 自动隐藏动画 */
   opacity:1;
   visibility:visible;
   transition: opacity 0.4s ease, visibility 0.4s;
+  /* 移动端强制显示，不会被挤没 */
+  white-space:nowrap;
+  padding:6px 10px;
 }
 #video-controls.hidden-ui{
   opacity:0;
   visibility:hidden;
 }
-
 /* 图标基础样式+hover发光交互 */
 #video-controls .icon {
   color: #bcf2ff;
   text-shadow: 0 0 6px rgba(0, 200, 255, 0.45);
   transition: 0.22s ease;
+  font-size:16px !important;
+  margin:0 3px;
 }
 #video-controls .icon:hover {
   color: #ffffff;
   text-shadow: 0 0 16px rgba(0, 200, 255, 0.9);
 }
-
 /* 进度条样式 */
 #seek-bar {
   accent-color: #00c8ff;
+  width:100px;
 }
 #seek-bar::-webkit-slider-thumb {
   box-shadow: 0 0 9px #00c8ff;
@@ -149,7 +149,6 @@ html,body{
 #seek-bar::-webkit-slider-thumb:hover {
   box-shadow: 0 0 18px #00c8ff;
 }
-
 /* 下拉选择框 */
 #projection-select, #video-select {
   backdrop-filter: blur(10px);
@@ -159,6 +158,9 @@ html,body{
   border: 1px solid rgba(0, 200, 255, 0.32);
   outline: none;
   transition: 0.22s;
+  font-size:12px;
+  padding:2px;
+  margin:0 3px;
 }
 #projection-select:focus, #video-select:focus {
   border-color: #00c8ff;
@@ -167,7 +169,6 @@ html,body{
 #projection-select option, #video-select option {
   background: #091220;
 }
-
 /* URL输入框 */
 #video-url-input {
   backdrop-filter: blur(10px);
@@ -177,6 +178,10 @@ html,body{
   border: 1px solid rgba(0, 200, 255, 0.32);
   outline: none;
   transition: 0.22s;
+  font-size:12px;
+  width:110px;
+  padding:2px;
+  margin:0 3px;
 }
 #video-url-input:focus {
   border-color: #00c8ff;
@@ -185,7 +190,6 @@ html,body{
 #video-url-input::placeholder {
   color: #7288a8;
 }
-
 /* 加载按钮 */
 #load-url-btn {
   background: rgba(0, 200, 255, 0.75);
@@ -194,17 +198,20 @@ html,body{
   transition: 0.22s ease;
   box-shadow: 0 0 7px rgba(0, 200, 255, 0.4);
   font-weight: 500;
+  font-size:12px;
+  padding:2px 4px;
+  margin:0 3px;
 }
 #load-url-btn:hover {
   background: #00c8ff;
   box-shadow: 0 0 16px rgba(0, 200, 255, 0.85);
 }
-
 /* 提示文字 */
 #tip {
   text-shadow: 0 0 6px rgba(0, 200, 255, 0.55);
+  font-size:11px;
+  margin:0 4px;
 }
-
 /* ========== 加载页标题与中央播放按钮｜迷体元宇风格 ========== */
 .title {
   color: #87eaff;
@@ -223,7 +230,7 @@ html,body{
 }
 .large-play:hover {
   color: #fff;
-  text-shadow: 0 0 30px rgba(0, 200, 255, 1), 0 0 50px rgba(0,200,255,0.55);
+  text-shadow: 0 0 30px rgba(0, 200, 1), 0 0 50px rgba(0,200,255,0.55);
 }
 </style>
 </head>
@@ -258,24 +265,25 @@ html,body{
           <a id="loop" class="fa fa-chain-broken icon" title="Stop Looping"></a>
           <a id="mute" class="fa fa-volume-up icon" title="Mute"></a>
           <a id="recenter" class="fa fa-dot-circle-o icon" title="Recenter"></a>
-          <a id="select-local-file" class="fa fa-folder-open icon rfloat" title="Select File"></a>
+          <a id="select-local-file" class="fa fa-folder-open icon" title="Select File"></a>
           <!-- 投影下拉 -->
-          <select id="projection-select" class="rfloat">
+          <select id="projection-select">
             <option value=0>星球模式</option>
             <option value=1>星球MAX 3D</option>
           </select>
           <!-- 视频下拉（本地预设视频） -->
-          <select id="video-select" class="rfloat">
+          <select id="video-select">
             <option value="https://cdn.pixabay.com/video/2021/09/27/89894-616430996_large.mp4">衍镜模式 (mp4)</option>
             <option value="0therelaxatron.webm">衍镜模式 (webm)</option>
             <option value="https://cdn.pixabay.com/video/2021/09/27/89894-616430996_large.mp4">迷体模式 (mp4)</option>
             <option value="1Vidcon.webm">迷体模式 (webm)</option>
           </select>
           <!-- URL输入框，小尺寸适配手机 -->
-          <input type="text" id="video-url-input" placeholder="URL" style="width:130px;padding:2px;font-size:12px;margin-right:6px;" class="rfloat">
-          <button id="load-url-btn" style="padding:2px 4px;font-size:12px;margin-right:6px;" class="rfloat">加载</button>
-          <span id="tip" style="color:#fff;font-size:11px;margin-right:8px;" class="rfloat"></span>
-          <a id="full-screen" class="fa fa-expand icon rfloat" title="Full Screen"></a>
+          <input type="text" id="video-url-input" placeholder="URL">
+          <button id="load-url-btn">加载</button>
+          <span id="tip"></span>
+          <!-- 全屏按钮，支持iOS+安卓，修复移动端无法全屏 -->
+          <a id="full-screen" class="fa fa-expand icon" title="Full Screen"></a>
         </div>
         <script>runEleVRPlayer();</script>
   </div>
@@ -286,17 +294,24 @@ const urlInput = document.getElementById('video-url-input');
 const loadBtn = document.getElementById('load-url-btn');
 const tipDom = document.getElementById('tip');
 const controlPanel = document.getElementById('video-controls');
+const container = document.getElementById('video-container');
+const fullscreenBtn = document.getElementById('full-screen');
+// 代理地址
+const PROXY_BASE = "https://b.miti1.cc.cd/?url=";
 
-// ========== 原有下拉框逻辑保持不变（本地视频） ==========
+// ========== 下拉框逻辑，自动走CORS代理 ==========
 videoSel.addEventListener('change', function(){
-  const fileName = this.value;
-  video.src = fileName;
+  const rawUrl = this.value;
+  const proxiedUrl = PROXY_BASE + encodeURIComponent(rawUrl);
+  video.src = proxiedUrl;
   video.load();
 });
-// ========== URL加载函数（外部mp4直链，不依赖下拉option） ==========
+
+// ========== URL加载函数，自动加代理解决跨域 ==========
 function loadVideoSrc(srcUrl){
   tipDom.innerText = "加载中";
-  video.src = srcUrl;
+  const proxiedUrl = PROXY_BASE + encodeURIComponent(srcUrl);
+  video.src = proxiedUrl;
   video.load();
   video.oncanplay = function(){
     tipDom.innerText = "就绪，点播放";
@@ -321,10 +336,44 @@ urlInput.addEventListener('keydown',function(e){
   }
 })
 
-// ========== 新增：控制面板自动隐藏逻辑｜鼠标静止3秒隐藏 ==========
+// ========== 新增：兼容iOS Safari /安卓浏览器全屏API ==========
+let isFull = false;
+fullscreenBtn.addEventListener('click', async ()=>{
+  try{
+    if(!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement){
+      // iOS Safari
+      if(container.webkitRequestFullscreen){
+        container.webkitRequestFullscreen();
+      }else if(container.requestFullscreen){
+        container.requestFullscreen();
+      }
+      fullscreenBtn.className = "fa fa-compress icon";
+    }else{
+      if(document.webkitExitFullscreen){
+        document.webkitExitFullscreen();
+      }else if(document.exitFullscreen){
+        document.exitFullscreen();
+      }
+      fullscreenBtn.className = "fa fa-expand icon";
+    }
+  }catch(err){
+    tipDom.innerText="全屏不支持";
+  }
+});
+// 监听全屏状态变化，切换图标
+document.addEventListener('fullscreenchange', updateFullIcon);
+document.addEventListener('webkitfullscreenchange', updateFullIcon);
+function updateFullIcon(){
+  if(document.fullscreenElement || document.webkitFullscreenElement){
+    fullscreenBtn.className = "fa fa-compress icon";
+  }else{
+    fullscreenBtn.className = "fa fa-expand icon";
+  }
+}
+
+// ========== 控制面板自动隐藏逻辑｜鼠标静止3秒隐藏 ==========
 let uiHideTimer;
 const UI_HIDE_DELAY = 3000;
-
 function showControls(){
   controlPanel.classList.remove('hidden-ui');
   clearTimeout(uiHideTimer);
@@ -334,9 +383,9 @@ function showControls(){
   }, UI_HIDE_DELAY);
 }
 // 鼠标移动 / 触屏 显示面板
-document.getElementById('video-container').addEventListener('mousemove', showControls);
-document.getElementById('video-container').addEventListener('touchstart', showControls);
-document.getElementById('video-container').addEventListener('touchmove', showControls);
+container.addEventListener('mousemove', showControls);
+container.addEventListener('touchstart', showControls);
+container.addEventListener('touchmove', showControls);
 // 初始化
 showControls();
 </script>
